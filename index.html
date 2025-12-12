@@ -2,15 +2,15 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>深圳速度：三十年人口剧变 (1985-2020)</title>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;500;700&family=Noto+Serif+SC:wght@500;700;900&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-paper: #F9F7F2; /* 暖白纸张色 */
-            --color-primary: #E67F65; /* 活力珊瑚红 */
-            --color-secondary: #5E9EA8; /* 复古青 */
+            --bg-paper: #F9F7F2;
+            --color-primary: #E67F65;
+            --color-secondary: #5E9EA8;
             --color-text: #2D3436;
             --color-text-light: #636e72;
             --grid-line: #E5E0D8;
@@ -18,48 +18,50 @@
             --font-cn: 'Noto Serif SC', serif;
         }
 
+        * {
+            box-sizing: border-box;
+        }
+
         body {
             margin: 0;
             padding: 0;
-            background-color: #2D3436; /* 外部深色背景，衬托海报 */
+            background-color: var(--bg-paper);
             height: 100vh;
             width: 100vw;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            overflow: hidden; /* 默认隐藏滚动条，内容溢出由子容器处理 */
             font-family: var(--font-en);
-            overflow: hidden; /* 防止出现滚动条 */
         }
 
-        /* 16:9 海报容器 */
+        /* 核心容器：使用 CSS Grid 
+           默认（桌面）布局：左边图表(70%)，右边信息(30%)
+           高度撑满 100vh
+        */
         .poster-container {
-            width: 95vw;
-            aspect-ratio: 16/9;
-            max-height: 95vh;
+            width: 100%;
+            height: 100%;
+            display: grid;
+            grid-template-columns: 70% 30%; /* 左右分割 */
             background-color: var(--bg-paper);
             position: relative;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
-            display: grid;
-            grid-template-columns: 68% 32%; /* 左图右文 */
-            overflow: hidden;
-            /* 背景纹理：淡淡的网格 */
+            /* 背景纹理 */
             background-image: 
                 linear-gradient(var(--grid-line) 1px, transparent 1px),
                 linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
             background-size: 40px 40px;
         }
 
-        /* 装饰图案：右上角圆环 */
+        /* 装饰图案：调整定位方式，使其在任何屏幕都不突兀 */
         .deco-circle {
             position: absolute;
-            top: -10%;
-            right: -5%;
-            width: 40vh;
-            height: 40vh;
+            top: -10vmin;
+            right: -10vmin;
+            width: 40vmin;
+            height: 40vmin;
             border: 2px solid var(--color-secondary);
             border-radius: 50%;
             opacity: 0.1;
             z-index: 0;
+            pointer-events: none; /* 防止遮挡点击 */
         }
         
         .deco-circle::before {
@@ -76,23 +78,26 @@
         /* 左侧主图表区 */
         .chart-area {
             position: relative;
-            padding: 40px;
+            padding: 3vmin;
             display: flex;
             flex-direction: column;
             z-index: 1;
+            height: 100%; /* 撑满高度 */
+            overflow: hidden;
         }
 
         .main-title {
             font-family: var(--font-cn);
             color: var(--color-text);
             margin-bottom: 10px;
+            flex-shrink: 0; /* 防止标题被压缩 */
         }
 
         .main-title h1 {
-            font-size: 3.5vw; /* 响应式字体 */
+            font-size: 5vmin; /* 使用 vmin 适配横竖屏 */
             margin: 0;
             line-height: 1;
-            letter-spacing: -2px;
+            letter-spacing: -1px;
         }
         
         .main-title h1 span {
@@ -102,42 +107,48 @@
 
         .main-title p {
             font-family: var(--font-en);
-            font-size: 1vw;
+            font-size: 1.5vmin;
             color: var(--color-text-light);
-            margin: 10px 0 0 5px;
+            margin: 1vmin 0 0 5px;
             letter-spacing: 2px;
             text-transform: uppercase;
         }
 
+        /* 图表容器：
+           关键点：使用 flex: 1 让它自动占据剩余的所有高度 
+        */
         #timelineChart {
-            flex: 1;
+            flex: 1; 
             width: 100%;
+            min-height: 0; /* 关键：防止 flex 子项溢出 */
             margin-top: 20px;
         }
 
         /* 右侧信息栏 */
         .info-sidebar {
-            background: rgba(255, 255, 255, 0.6);
-            backdrop-filter: blur(5px);
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(8px);
             border-left: 1px solid var(--grid-line);
-            padding: 5vh 3vw;
+            padding: 3vmin;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
             position: relative;
             z-index: 2;
+            height: 100%;
+            overflow-y: auto; /* 如果屏幕太矮，允许侧边栏滚动 */
         }
 
         .story-block {
-            margin-bottom: 2vh;
+            margin-bottom: 3vh;
         }
 
         .story-title {
             font-family: var(--font-cn);
-            font-size: 1.5vw;
+            font-size: 2.2vmin;
             font-weight: 700;
             color: var(--color-text);
-            margin-bottom: 1vh;
+            margin-bottom: 1.5vh;
             display: flex;
             align-items: center;
         }
@@ -146,7 +157,7 @@
             content: '';
             display: inline-block;
             width: 6px;
-            height: 24px;
+            height: 2.5vmin;
             background: var(--color-primary);
             margin-right: 10px;
             border-radius: 2px;
@@ -154,7 +165,7 @@
 
         .story-text {
             font-family: var(--font-cn);
-            font-size: 0.9vw;
+            font-size: 1.6vmin; /* 稍微调大一点，保证可读性 */
             color: var(--color-text-light);
             line-height: 1.6;
             text-align: justify;
@@ -164,12 +175,12 @@
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 15px;
-            margin-top: 20px;
+            margin-top: 10px;
         }
 
         .stat-item {
             background: #fff;
-            padding: 15px;
+            padding: 1.5vmin;
             border: 1px solid #eee;
             border-radius: 8px;
             box-shadow: 0 4px 10px rgba(0,0,0,0.02);
@@ -177,46 +188,76 @@
 
         .stat-num {
             font-family: var(--font-en);
-            font-size: 2vw;
+            font-size: 3.5vmin;
             font-weight: 700;
             color: var(--color-primary);
         }
 
         .stat-label {
-            font-size: 0.7vw;
+            font-size: 1.2vmin;
             color: var(--color-text-light);
             text-transform: uppercase;
         }
 
         /* 迷你图表容器 */
         .mini-chart-container {
-            height: 18vh;
+            height: 20vh;
             width: 100%;
-            margin-top: 20px;
+            min-height: 150px; /* 保证最小高度 */
         }
 
         .quote-box {
             margin-top: auto;
             border-top: 1px solid var(--color-text-light);
-            padding-top: 20px;
+            padding-top: 2vmin;
         }
 
         .quote {
             font-family: var(--font-cn);
-            font-size: 1.2vw;
+            font-size: 2vmin;
             font-style: italic;
             color: var(--color-text);
             line-height: 1.4;
         }
 
         .caption {
-            font-size: 0.7vw;
+            font-size: 1vmin;
             color: var(--color-text-light);
             margin-top: 5px;
             display: block;
             text-align: right;
         }
 
+        /* === 响应式适配 === 
+           当屏幕宽度小于 768px (手机/竖屏平板) 时切换布局
+        */
+        @media (max-width: 768px) {
+            .poster-container {
+                grid-template-columns: 1fr; /* 单列 */
+                grid-template-rows: 55% 45%; /* 上下分割：图表55%，文字45% */
+            }
+
+            .info-sidebar {
+                border-left: none;
+                border-top: 1px solid var(--grid-line);
+                padding: 20px;
+                /* 手机上允许内容多时滚动 */
+                overflow-y: auto; 
+            }
+
+            /* 调整手机上的字体大小，因为 vmin 在竖屏时基于宽度，可能太小 */
+            .main-title h1 { font-size: 28px; }
+            .main-title p { font-size: 10px; }
+            .story-title { font-size: 16px; }
+            .story-title::before { height: 16px; }
+            .story-text { font-size: 13px; }
+            .stat-num { font-size: 24px; }
+            .stat-label { font-size: 10px; }
+            .quote { font-size: 14px; }
+            
+            /* 手机上隐藏装饰圆环，避免干扰 */
+            .deco-circle { opacity: 0.05; width: 60vw; height: 60vw; }
+        }
     </style>
 </head>
 <body>
@@ -225,7 +266,7 @@
         <!-- 装饰背景 -->
         <div class="deco-circle"></div>
 
-        <!-- 左侧：主要视觉区 -->
+        <!-- 左侧/上方：主要视觉区 -->
         <div class="chart-area">
             <div class="main-title">
                 <h1>SHENZHEN <span>VELOCITY</span></h1>
@@ -237,7 +278,7 @@
             <div id="timelineChart"></div>
         </div>
 
-        <!-- 右侧：叙事与数据区 -->
+        <!-- 右侧/下方：叙事与数据区 -->
         <div class="info-sidebar">
             
             <div class="story-block">
@@ -304,8 +345,8 @@
             top: '15%',
             left: '2%',
             right: '4%',
-            bottom: '5%',
-            containLabel: true
+            bottom: '8%', // 稍微增加底部，防止 label 被切
+            containLabel: true // 关键：自动计算边距，适应全屏缩放
         },
         tooltip: {
             trigger: 'axis',
@@ -318,7 +359,7 @@
             data: data.years,
             axisLine: { lineStyle: { color: '#888' } },
             axisLabel: { 
-                interval: 4, 
+                interval: 'auto', // 自动间隔，适应不同宽度
                 fontFamily: 'Montserrat',
                 color: '#636e72',
                 fontSize: 12
@@ -327,7 +368,7 @@
         },
         yAxis: {
             type: 'value',
-            position: 'right', // Y轴放右边，不遮挡左边的上升趋势
+            position: 'right', 
             splitLine: { 
                 show: true, 
                 lineStyle: { type: 'dashed', color: '#E5E0D8' } 
@@ -348,7 +389,7 @@
                 data: data.total,
                 lineStyle: {
                     width: 4,
-                    color: '#E67F65', // 珊瑚红主线
+                    color: '#E67F65',
                     shadowColor: 'rgba(230, 127, 101, 0.4)',
                     shadowBlur: 10,
                     shadowOffsetY: 5
@@ -381,14 +422,13 @@
                         { coord: ['2020', 1763.38], value: 1763.38, name: '2020' }
                     ]
                 },
-                // 关键事件标注线
                 markLine: {
                     symbol: ['none', 'none'],
                     label: { show: true, position: 'insideEndTop', formatter: '{b}' },
                     lineStyle: { color: '#5E9EA8', type: 'dashed', width: 1 },
                     data: [
-                        { xAxis: '1992', label: { formatter: '1992 南方谈话\n(增速爆发)', padding:[0,0,10,-60], color:'#5E9EA8' } },
-                        { xAxis: '2010', label: { formatter: '2010 特区扩容\n(突破千万)', padding:[0,0,10,-60], color:'#5E9EA8' } }
+                        { xAxis: '1992', label: { formatter: '1992 南方谈话', padding:[0,0,5,-10], color:'#5E9EA8' } },
+                        { xAxis: '2010', label: { formatter: '2010 特区扩容', padding:[0,0,5,-10], color:'#5E9EA8' } }
                     ]
                 }
             }
@@ -402,15 +442,16 @@
     
     // 2020 数据
     const pieOption = {
-        color: ['#E67F65', '#5E9EA8'], // 珊瑚红(非户籍) vs 青色(户籍)
+        color: ['#E67F65', '#5E9EA8'],
         tooltip: { trigger: 'item' },
-        legend: { top: 'middle', left: 'right', orient: 'vertical', icon: 'circle' },
+        // 调整图例位置以适应可能的窄屏
+        legend: { top: '5%', right: '0%', orient: 'vertical', icon: 'circle' },
         series: [
             {
                 name: '2020人口结构',
                 type: 'pie',
                 radius: ['50%', '80%'],
-                center: ['30%', '50%'],
+                center: ['35%', '50%'], // 稍微左移，留位置给 Legend
                 avoidLabelOverlap: false,
                 itemStyle: {
                     borderRadius: 5,
@@ -427,7 +468,7 @@
     };
     pieChart.setOption(pieOption);
 
-    // 响应式
+    // 响应式：监听 resize 并强制重绘图表
     window.addEventListener('resize', () => {
         myChart.resize();
         pieChart.resize();
